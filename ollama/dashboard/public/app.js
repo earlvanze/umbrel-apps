@@ -133,7 +133,7 @@ function escapeHtml(value) {
 }
 
 async function load(forceRefresh = false) {
-  const response = await fetch(`/api/dashboard/state${forceRefresh ? "?refresh=1" : ""}`, { cache: "no-store" });
+  const response = await fetch(`/dashboard-api/state${forceRefresh ? "?refresh=1" : ""}`, { cache: "no-store" });
   const state = await response.json();
   if (!response.ok) throw new Error(state.detail || state.error || "Failed to load state");
   models = state.models || [];
@@ -148,7 +148,7 @@ async function save() {
   saveButton.disabled = true;
   saveButton.textContent = "Saving";
   try {
-    const response = await fetch("/api/dashboard/config", {
+    const response = await fetch("/dashboard-api/config", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ models: models.map(({ id, enabled }) => ({ id, enabled })) })
@@ -201,7 +201,7 @@ async function searchRemoteModels(query, requestId) {
     render();
     return;
   }
-  const response = await fetch(`/api/dashboard/search?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
+  const response = await fetch(`/dashboard-api/search?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.detail || payload.error || "Model search failed");
   if (requestId !== searchRequest) return;

@@ -7,6 +7,7 @@ const path = require("path");
 const PORT = Number(process.env.PORT || 3000);
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://ollama_ollama_1:11434").replace(/\/+$/, "");
 const OLLAMA_PROXY_TIMEOUT_MS = Number(process.env.OLLAMA_PROXY_TIMEOUT_MS || 300000);
+const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 16 * 1024 * 1024);
 const CONFIG_DIR = process.env.CONFIG_DIR || "/config";
 const PUBLIC_DIR = path.join(__dirname, "public");
 const CATALOG_PATH = path.join(__dirname, "catalog.json");
@@ -57,13 +58,32 @@ async function readBody(req) {
 
 async function readRawBody(req) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      const error = new Error("request body is too large");
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(chunk);
+  }
   return Buffer.concat(chunks);
+}
+
+function securityHeaders() {
+  return {
+    "content-security-policy": "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN"
+  };
 }
 
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
+    ...securityHeaders(),
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store"
   });
@@ -615,6 +635,7 @@ async function serveStatic(req, res) {
   try {
     const data = await fsp.readFile(filePath);
     res.writeHead(200, {
+      ...securityHeaders(),
       "content-type": contentTypes[path.extname(filePath)] || "application/octet-stream",
       "cache-control": filePath.endsWith("index.html") ? "no-store" : "public, max-age=300"
     });
@@ -627,15 +648,15 @@ async function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://dashboard.local");
-    if (req.method === "GET" && url.pathname === "/api/dashboard/state") {
+    if (req.method === "GET" && url.pathname === "/dashboard-api/state") {
       sendJson(res, 200, await buildState({ forceCloudCatalog: url.searchParams.get("refresh") === "1" }));
       return;
     }
-    if (req.method === "GET" && url.pathname === "/api/dashboard/search") {
+    if (req.method === "GET" && url.pathname === "/dashboard-api/search") {
       sendJson(res, 200, { models: await searchOllamaModels(url.searchParams.get("q")) });
       return;
     }
-    if (req.method === "POST" && url.pathname === "/api/dashboard/config") {
+    if (req.method === "POST" && url.pathname === "/dashboard-api/config") {
       const body = await readBody(req);
       await persistSelection(Array.isArray(body.models) ? body.models : []);
       sendJson(res, 200, await buildState());
@@ -661,7 +682,7 @@ const server = http.createServer(async (req, res) => {
     }
     sendError(res, 405, "method_not_allowed");
   } catch (error) {
-    sendError(res, 500, "dashboard_error", error.message);
+    sendError(res, error.statusCode || 500, "dashboard_error", error.message);
   }
 });
 

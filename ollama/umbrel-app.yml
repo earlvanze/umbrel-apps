@@ -3,7 +3,7 @@ id: ollama
 name: Ollama
 tagline: Self-host open source AI models like DeepSeek-R1, Llama, and more
 category: ai
-version: "0.32.6"
+version: "0.32.6-umbrel-dashboard.1"
 port: 11434
 description: >-
   Ollama allows you to download and run advanced AI models directly on your own hardware. This Umbrel app includes a model dashboard for enabling Ollama Cloud models, selecting downloadable local models, and pulling enabled local models into the persistent Ollama volume.
@@ -38,11 +38,7 @@ defaultUsername: ""
 defaultPassword: ""
 dependencies: []
 releaseNotes: >-
-  Key highlights in this release:
-    - Adds an Umbrel model dashboard for Ollama Cloud and local downloadable models
-    - Auto-discovers Ollama Cloud models from Ollama's public catalog and enables them by default
-    - Leaves local models disabled until selected
-    - Pulls newly enabled local models into the persistent Ollama volume
+  This Umbrel package update adds a model dashboard for Ollama Cloud and local downloadable models. Cloud models are discovered and enabled by default, while local models remain disabled until selected. Enabling a local model starts its download into Ollama's persistent model storage.
 
 
   Full release notes are available at https://github.com/ollama/ollama/releases/
