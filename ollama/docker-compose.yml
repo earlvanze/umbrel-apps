@@ -8,7 +8,7 @@ services:
       PROXY_AUTH_WHITELIST: "/api/*,/v1/*"
 
   dashboard:
-    image: ghcr.io/earlvanze/ollama-umbrel-dashboard:0.2.0
+    image: ghcr.io/earlvanze/ollama-umbrel-dashboard:0.2.0@sha256:efd6ea73ab6c34d8c36c8d6297449c6a98b4753fcab853d65baba050971776fb
     user: "1000:1000"
     init: true
     read_only: true
