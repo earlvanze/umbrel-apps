@@ -27,3 +27,6 @@ vendor/
 tmp/
 temp/
 *.tmp
+
+# Local fleet policy notes; do not publish to upstream Umbrel app stores
+docs/HOST_PARITY_POLICY.md
